@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SimpleMeet</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',Roboto,Arial,sans-serif; background:#1a1d29; color:#e8eaf0; height:100vh; overflow:hidden; }
+button { font-family:inherit; cursor:pointer; border:none; }
+input { font-family:inherit; }
+
+/* ===== HOME SCREEN ===== */
+.home-wrapper { height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#1a1d29 0%,#2a2f45 100%); overflow-y:auto; padding:20px; }
+.home-card { background:#242837; border-radius:16px; padding:40px 32px; width:100%; max-width:380px; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+.logo { font-size:28px; text-align:center; margin-bottom:8px; }
+.subtitle { text-align:center; color:#9aa0b4; font-size:14px; margin-bottom:24px; }
+.form-group { margin-bottom:16px; }
+.form-group label { display:block; font-size:13px; color:#b8bdd0; margin-bottom:6px; }
+.form-group input { width:100%; padding:12px 14px; border-radius:8px; border:1px solid #3a3f55; background:#1a1d29; color:#e8eaf0; font-size:15px; outline:none; }
+.form-group input:focus { border-color:#5b8def; }
+.btn { width:100%; padding:12px; border-radius:8px; font-size:15px; font-weight:600; }
+.btn:active { transform:scale(0.98); }
+.btn-primary { background:#5b8def; color:#fff; }
+.btn-primary:hover { opacity:0.9; }
+.btn-secondary { background:#3a3f55; color:#e8eaf0; }
+.btn-secondary:hover { opacity:0.9; }
+.divider { text-align:center; margin:18px 0; position:relative; color:#6a7089; font-size:13px; }
+.divider::before,.divider::after { content:""; position:absolute; top:50%; width:40%; height:1px; background:#3a3f55; }
+.divider::before{left:0;} .divider::after{right:0;}
+.error-msg { color:#f16a6a; font-size:13px; text-align:center; margin-top:14px; min-height:18px; }
+.storage-note { font-size:11px; color:#6a7089; text-align:center; margin-top:16px; line-height:1.5; }
+
+/* ===== MEETING SCREEN ===== */
+.meeting-wrapper { height:100vh; display:none; flex-direction:column; }
+.meeting-wrapper.active { display:flex; }
+.meeting-header { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; background:#1a1d29; border-bottom:1px solid #2a2f45; }
+.room-info { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.logo-small { font-weight:700; font-size:16px; }
+.room-code-badge { font-size:13px; color:#9aa0b4; background:#242837; padding:4px 10px; border-radius:6px; }
+.btn-icon { background:#242837; color:#e8eaf0; font-size:18px; padding:8px 12px; border-radius:8px; }
+.btn-icon:hover { background:#3a3f55; }
+.meeting-body { flex:1; display:flex; overflow:hidden; }
+.video-area { flex:1; position:relative; padding:16px; display:flex; flex-direction:column; overflow:hidden; }
+.video-grid { flex:1; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; height:100%; }
+.video-tile { position:relative; background:#000; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center; min-height:200px; }
+.video-tile video { width:100%; height:100%; object-fit:cover; }
+.video-name-tag { position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.55); padding:4px 10px; border-radius:6px; font-size:13px; }
+.waiting-message { text-align:center; color:#9aa0b4; font-size:14px; padding:14px; }
+.notification-bar { background:#3a2f1a; color:#f0c98a; padding:10px 16px; border-radius:8px; font-size:13px; margin-top:8px; text-align:center; display:none; }
+.chat-panel { width:320px; background:#1a1d29; border-left:1px solid #2a2f45; display:flex; flex-direction:column; }
+.chat-panel.hidden { display:none; }
+.chat-header { padding:14px 16px; font-weight:600; border-bottom:1px solid #2a2f45; }
+.chat-messages { flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
+.chat-msg { max-width:90%; padding:8px 12px; border-radius:10px; background:#242837; font-size:14px; word-wrap:break-word; }
+.chat-msg.own { align-self:flex-end; background:#5b8def; color:#fff; }
+.chat-msg .chat-msg-meta { font-size:11px; opacity:0.7; margin-bottom:3px; }
+.chat-msg.system { align-self:center; background:transparent; color:#6a7089; font-size:12px; font-style:italic; }
+.chat-input-area { display:flex; gap:8px; padding:12px 16px; border-top:1px solid #2a2f45; }
+.chat-input-area input { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #3a3f55; background:#242837; color:#e8eaf0; outline:none; }
+.btn-small { width:auto; padding:10px 16px; }
+.controls-bar { display:flex; align-items:center; justify-content:center; gap:16px; padding:16px; background:#1a1d29; border-top:1px solid #2a2f45; }
+.control-btn { width:52px; height:52px; border-radius:50%; background:#242837; color:#e8eaf0; font-size:20px; display:flex; align-items:center; justify-content:center; }
+.control-btn:hover { background:#3a3f55; }
+.control-btn:active { transform:scale(0.95); }
+.control-btn.active-off { background:#f16a6a; color:#fff; }
+.control-btn.sharing { background:#5b8def; color:#fff; }
+.leave-btn { background:#e0433d; color:#fff; }
+.leave-btn:hover { background:#c9362f; }
+
+@media (max-width:768px){
+  .meeting-body { flex-direction:column; }
+  .chat-panel { width:100%; height:38vh; border-left:none; border-top:1px solid #2a2f45; }
+  .video-grid { grid-template-columns:1fr; }
+  .video-tile { min-height:160px; }
+  .control-btn { width:46px; height:46px; font-size:18px; }
+  .room-code-badge { display:none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================= HOME SCREEN ================= -->
+<div class="home-wrapper" id="homeScreen">
+  <div class="home-card">
+    <h1 class="logo">🎥 SimpleMeet</h1>
+    <p class="subtitle">Video conference sederhana, cepat, tanpa ribet.</p>
+
+    <div class="form-group">
+      <label for="userNameInput">Nama Anda</label>
+      <input type="text" id="userNameInput" placeholder="Masukkan nama Anda" maxlength="30" />
+    </div>
+
+    <button id="createRoomBtn" class="btn btn-primary">Buat Room Baru</button>
+
+    <div class="divider"><span>atau</span></div>
+
+    <div class="form-group">
+      <label for="roomCodeInput">Kode Room</label>
+      <input type="text" id="roomCodeInput" placeholder="Contoh: ABC123" maxlength="10" style="text-transform:uppercase" />
+    </div>
+    <button id="joinRoomBtn" class="btn btn-secondary">Gabung Room</button>
+
+    <p id="errorMsg" class="error-msg"></p>
+    <p class="storage-note">Catatan: kode room &amp; pesan chat tersimpan sementara di storage bersama artifact ini, sehingga siapa pun yang tahu kodenya (atau pengguna lain artifact ini) berpotensi melihatnya. Jangan gunakan untuk percakapan rahasia.</p>
+  </div>
+</div>
+
+<!-- ================= MEETING SCREEN ================= -->
+<div class="meeting-wrapper" id="meetingScreen">
+  <header class="meeting-header">
+    <div class="room-info">
+      <span class="logo-small">🎥 SimpleMeet</span>
+      <span class="room-code-badge">Room: <b id="roomCodeLabel"></b></span>
+    </div>
+    <button id="toggleChatBtn" class="btn-icon" title="Tampilkan/Sembunyikan Chat">💬</button>
+  </header>
+
+  <div class="meeting-body">
+    <main class="video-area">
+      <div class="video-grid">
+        <div class="video-tile" id="localTile">
+          <video id="localVideo" autoplay playsinline muted></video>
+          <span class="video-name-tag" id="localNameTag">Anda</span>
+        </div>
+        <div class="video-tile" id="remoteTile" style="display:none;">
+          <video id="remoteVideo" autoplay playsinline></video>
+          <span class="video-name-tag" id="remoteNameTag">Peserta</span>
+        </div>
+      </div>
+      <div id="waitingMessage" class="waiting-message">
+        Menunggu peserta lain bergabung... Bagikan kode room <b id="waitingRoomCode"></b> kepada teman Anda.
+      </div>
+      <div id="notificationBar" class="notification-bar"></div>
+    </main>
+
+    <aside class="chat-panel" id="chatPanel">
+      <div class="chat-header">Chat Meeting</div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <form id="chatForm" class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Ketik pesan..." autocomplete="off" maxlength="1000" />
+        <button type="submit" class="btn btn-primary btn-small">Kirim</button>
+      </form>
+    </aside>
+  </div>
+
+  <footer class="controls-bar">
+    <button id="toggleMicBtn" class="control-btn" title="Mikrofon"><span id="micIcon">🎤</span></button>
+    <button id="toggleCamBtn" class="control-btn" title="Kamera"><span id="camIcon">📷</span></button>
+    <button id="shareScreenBtn" class="control-btn" title="Bagikan Layar">🖥️</button>
+    <button id="leaveBtn" class="control-btn leave-btn" title="Keluar Meeting">☎️</button>
+  </footer>
+</div>
+
+<script>
+// ============================================================
+// SimpleMeet — versi artifact, signaling via window.storage
+// (pengganti Socket.IO, karena artifact tidak punya server sendiri)
+// ============================================================
+
+const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+// ---------- STATE ----------
+const clientId = Math.random().toString(36).slice(2, 10); // ID unik per sesi/browser
+let userName = '';
+let roomId = '';
+let peerId = null;
+let peerName = '';
+let isOfferer = false;
+
+let localStream = null;
+let originalCameraTrack = null;
+let peerConnection = null;
+let remoteDescSet = false;
+let pendingRemoteCandidates = [];
+let iceCounterOut = 0;
+
+let isMicOn = true;
+let isCamOn = true;
+let isScreenSharing = false;
+let screenStream = null;
+let audioContextForMix = null;
+
+let seenChatIds = new Set();
+let pollTimer = null;
+let heartbeatTimer = null;
+let leftFlag = false;
+
+// ---------- ELEMENTS ----------
+const homeScreen = document.getElementById('homeScreen');
+const meetingScreen = document.getElementById('meetingScreen');
+const userNameInput = document.getElementById('userNameInput');
+const roomCodeInput = document.getElementById('roomCodeInput');
+const createRoomBtn = document.getElementById('createRoomBtn');
+const joinRoomBtn = document.getElementById('joinRoomBtn');
+const errorMsg = document.getElementById('errorMsg');
+
+const localVideo = document.getElementById('localVideo');
+const remoteVideo = document.getElementById('remoteVideo');
+const remoteTile = document.getElementById('remoteTile');
+const remoteNameTag = document.getElementById('remoteNameTag');
+const waitingMessage = document.getElementById('waitingMessage');
+const notificationBar = document.getElementById('notificationBar');
+const toggleMicBtn = document.getElementById('toggleMicBtn');
+const toggleCamBtn = document.getElementById('toggleCamBtn');
+const shareScreenBtn = document.getElementById('shareScreenBtn');
+const leaveBtn = document.getElementById('leaveBtn');
+const micIcon = document.getElementById('micIcon');
+const camIcon = document.getElementById('camIcon');
+const chatPanel = document.getElementById('chatPanel');
+const chatMessages = document.getElementById('chatMessages');
+const chatForm = document.getElementById('chatForm');
+const chatInput = document.getElementById('chatInput');
+const toggleChatBtn = document.getElementById('toggleChatBtn');
+
+// ---------- UTIL ----------
+function showError(msg) { errorMsg.textContent = msg; }
+
+function showNotification(message, autoHideMs) {
+  notificationBar.textContent = message;
+  notificationBar.style.display = 'block';
+  if (autoHideMs !== 0) {
+    setTimeout(() => { notificationBar.style.display = 'none'; }, autoHideMs || 6000);
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function addChatMessage({ fromId, fromName, message, time, system }) {
+  const div = document.createElement('div');
+  if (system) {
+    div.className = 'chat-msg system';
+    div.textContent = message;
+  } else {
+    const isOwn = fromId === clientId;
+    div.className = 'chat-msg' + (isOwn ? ' own' : '');
+    div.innerHTML = '<div class="chat-msg-meta">' + (isOwn ? 'Anda' : escapeHtml(fromName)) + ' • ' + (time || '') + '</div>' + escapeHtml(message);
+  }
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function generateRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+}
+
+// ---------- STORAGE HELPERS (pengganti Socket.IO signaling) ----------
+async function storageSet(key, value) {
+  try { await window.storage.set(key, typeof value === 'string' ? value : JSON.stringify(value), true); } catch (e) { console.error('storage.set gagal', key, e); }
+}
+async function storageGet(key) {
+  try {
+    const res = await window.storage.get(key, true);
+    return res ? res.value : null;
+  } catch (e) { return null; }
+}
+async function storageDelete(key) {
+  try { await window.storage.delete(key, true); } catch (e) {}
+}
+async function storageList(prefix) {
+  try {
+    const res = await window.storage.list(prefix, true);
+    return (res && res.keys) ? res.keys : [];
+  } catch (e) { return []; }
+}
+
+// Presence: presence:{roomId}:{clientId} -> {name, ts}
+async function sendHeartbeat() {
+  await storageSet('presence:' + roomId + ':' + clientId, { name: userName, ts: Date.now() });
+}
+async function clearPresence() {
+  await storageDelete('presence:' + roomId + ':' + clientId);
+}
+
+async function listActivePeers() {
+  const keys = await storageList('presence:' + roomId + ':');
+  const now = Date.now();
+  const peers = [];
+  for (const key of keys) {
+    const id = key.split(':')[2];
+    if (!id || id === clientId) continue;
+    const raw = await storageGet(key);
+    if (!raw) continue;
+    try {
+      const data = JSON.parse(raw);
+      if (now - data.ts < 12000) peers.push({ id, name: data.name });
+    } catch (e) {}
+  }
+  return peers;
+}
+
+// Signal (offer/answer): signal:{roomId}:{fromId}:{toId}
+async function sendSignal(toId, type, payload) {
+  await storageSet('signal:' + roomId + ':' + clientId + ':' + toId, { type, payload, ts: Date.now() });
+}
+async function pollSignal(fromId) {
+  const key = 'signal:' + roomId + ':' + fromId + ':' + clientId;
+  const raw = await storageGet(key);
+  if (!raw) return null;
+  await storageDelete(key);
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+// ICE candidates: ice:{roomId}:{fromId}:{toId}:{index}
+async function sendIceCandidate(toId, candidate) {
+  iceCounterOut++;
+  await storageSet('ice:' + roomId + ':' + clientId + ':' + toId + ':' + iceCounterOut, candidate);
+}
+async function pollIceCandidates(fromId) {
+  const prefix = 'ice:' + roomId + ':' + fromId + ':' + clientId + ':';
+  const keys = await storageList(prefix);
+  const candidates = [];
+  for (const key of keys) {
+    const raw = await storageGet(key);
+    if (raw) {
+      try { candidates.push(JSON.parse(raw)); } catch (e) {}
+      await storageDelete(key);
+    }
+  }
+  return candidates;
+}
+
+// Chat: chat:{roomId}:{msgId}
+async function sendChatMessage(message) {
+  const msgId = clientId + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+  await storageSet('chat:' + roomId + ':' + msgId, {
+    fromId: clientId,
+    fromName: userName,
+    message,
+    time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+  });
+}
+async function pollChatMessages() {
+  const keys = await storageList('chat:' + roomId + ':');
+  const items = [];
+  for (const key of keys) {
+    const msgId = key.split(':')[2];
+    if (seenChatIds.has(msgId)) continue;
+    const raw = await storageGet(key);
+    if (!raw) continue;
+    try {
+      const data = JSON.parse(raw);
+      items.push({ ...data, msgId, ts: parseInt(msgId.split('_')[1], 10) || 0 });
+    } catch (e) {}
+  }
+  items.sort((a, b) => a.ts - b.ts);
+  for (const item of items) {
+    seenChatIds.add(item.msgId);
+    addChatMessage(item);
+  }
+}
+
+// Screen share status broadcast (opsional, hanya notifikasi)
+async function broadcastScreenShareStatus(sharing) {
+  await storageSet('screenshare:' + roomId + ':' + clientId, { name: userName, sharing, ts: Date.now() });
+}
+
+// ---------- HOME SCREEN LOGIC ----------
+const savedName = sessionStorage.getItem('simplemeet_username');
+if (savedName) userNameInput.value = savedName;
+
+function goToRoom(code) {
+  const name = userNameInput.value.trim();
+  if (!name) { showError('Silakan isi nama Anda terlebih dahulu.'); userNameInput.focus(); return; }
+  sessionStorage.setItem('simplemeet_username', name);
+  userName = name;
+  roomId = code.trim().toUpperCase();
+  enterMeeting();
+}
+
+createRoomBtn.addEventListener('click', () => { showError(''); goToRoom(generateRoomCode()); });
+joinRoomBtn.addEventListener('click', () => {
+  showError('');
+  const code = roomCodeInput.value.trim().toUpperCase();
+  if (!code) { showError('Silakan masukkan kode room.'); roomCodeInput.focus(); return; }
+  goToRoom(code);
+});
+roomCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') joinRoomBtn.click(); });
+userNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') createRoomBtn.click(); });
+
+// ---------- ENTER MEETING ----------
+async function enterMeeting() {
+  homeScreen.style.display = 'none';
+  meetingScreen.classList.add('active');
+  document.getElementById('roomCodeLabel').textContent = roomId;
+  document.getElementById('waitingRoomCode').textContent = roomId;
+  document.getElementById('localNameTag').textContent = userName + ' (Anda)';
+
+  // Cek kapasitas room (maks 2 peserta, fokus 1-on-1)
+  const existingPeers = await listActivePeers();
+  if (existingPeers.length >= 2) {
+    alert('Room sudah penuh (maksimal 2 peserta pada versi ini). Silakan buat room baru.');
+    window.location.reload();
+    return;
+  }
+
+  await initLocalMedia();
+
+  heartbeatTimer = setInterval(sendHeartbeat, 4000);
+  await sendHeartbeat();
+
+  pollTimer = setInterval(pollLoop, 1200);
+  pollLoop();
+}
+
+// ---------- LOCAL MEDIA ----------
+async function initLocalMedia() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    localVideo.srcObject = localStream;
+  } catch (err) {
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+      localVideo.srcObject = localStream;
+      showNotification('Kamera tidak tersedia/diizinkan. Anda bergabung hanya dengan audio.');
+    } catch (err2) {
+      localStream = new MediaStream();
+      showNotification('Kamera dan mikrofon tidak dapat diakses. Anda bergabung tanpa audio/video. Periksa izin browser Anda.', 10000);
+    }
+  }
+  const camTrack = localStream.getVideoTracks()[0];
+  if (camTrack) originalCameraTrack = camTrack;
+  if (!localStream.getAudioTracks().length) { isMicOn = false; updateMicButton(); }
+  if (!localStream.getVideoTracks().length) { isCamOn = false; updateCamButton(); }
+}
+
+// ---------- PEER CONNECTION ----------
+function createPeerConnection(targetId) {
+  const pc = new RTCPeerConnection(rtcConfig);
+  localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+
+  pc.onicecandidate = (event) => {
+    if (event.candidate) sendIceCandidate(targetId, event.candidate);
+  };
+  pc.ontrack = (event) => {
+    remoteVideo.srcObject = event.streams[0];
+    remoteTile.style.display = 'flex';
+    waitingMessage.style.display = 'none';
+  };
+  pc.onconnectionstatechange = () => {
+    if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) handleRemoteLeft();
+  };
+  return pc;
+}
+
+function getVideoSender() { return peerConnection ? peerConnection.getSenders().find(s => s.track && s.track.kind === 'video') : null; }
+function getAudioSender() { return peerConnection ? peerConnection.getSenders().find(s => s.track && s.track.kind === 'audio') : null; }
+
+function handleRemoteLeft() {
+  if (!peerId) return;
+  addChatMessage({ system: true, message: (peerName || 'Peserta') + ' meninggalkan meeting.' });
+  remoteTile.style.display = 'none';
+  waitingMessage.style.display = 'block';
+  remoteVideo.srcObject = null;
+  if (peerConnection) { peerConnection.close(); peerConnection = null; }
+  peerId = null; peerName = ''; remoteDescSet = false; pendingRemoteCandidates = []; iceCounterOut = 0;
+}
+
+async function startConnectionWith(peer) {
+  peerId = peer.id;
+  peerName = peer.name;
+  remoteNameTag.textContent = peerName;
+  isOfferer = clientId < peerId; // aturan deterministik: id lebih kecil = offerer, hindari glare
+  peerConnection = createPeerConnection(peerId);
+
+  if (isOfferer) {
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    await sendSignal(peerId, 'offer', offer);
+    addChatMessage({ system: true, message: peerName + ' bergabung ke meeting.' });
+  }
+  // Jika bukan offerer, tunggu offer masuk lewat pollLoop
+}
+
+// ---------- POLLING LOOP (pengganti event Socket.IO) ----------
+async function pollLoop() {
+  if (leftFlag) return;
+  try {
+    // 1) Cari peserta lain jika belum terhubung
+    if (!peerId) {
+      const peers = await listActivePeers();
+      if (peers.length >= 1) {
+        // Jika lebih dari 1 peserta lain (room seharusnya sudah penuh), abaikan yang ekstra
+        await startConnectionWith(peers[0]);
+      }
+    }
+
+    // 2) Proses signaling (offer/answer) dari peer
+    if (peerId) {
+      const sig = await pollSignal(peerId);
+      if (sig) {
+        if (sig.type === 'offer' && !isOfferer) {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(sig.payload));
+          remoteDescSet = true;
+          await flushPendingCandidates();
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          await sendSignal(peerId, 'answer', answer);
+          addChatMessage({ system: true, message: peerName + ' bergabung ke meeting.' });
+        } else if (sig.type === 'answer' && isOfferer) {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(sig.payload));
+          remoteDescSet = true;
+          await flushPendingCandidates();
+        }
+      }
+
+      // 3) ICE candidates dari peer
+      const candidates = await pollIceCandidates(peerId);
+      for (const c of candidates) {
+        if (remoteDescSet) {
+          try { await peerConnection.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { console.error(e); }
+        } else {
+          pendingRemoteCandidates.push(c);
+        }
+      }
+
+      // 4) Cek apakah peer masih aktif (presence heartbeat)
+      const stillActive = await storageGet('presence:' + roomId + ':' + peerId);
+      if (!stillActive) {
+        handleRemoteLeft();
+      } else {
+        try {
+          const data = JSON.parse(stillActive);
+          if (Date.now() - data.ts > 12000) handleRemoteLeft();
+        } catch (e) {}
+      }
+    }
+
+    // 5) Chat
+    await pollChatMessages();
+  } catch (e) {
+    console.error('pollLoop error', e);
+  }
+}
+
+async function flushPendingCandidates() {
+  for (const c of pendingRemoteCandidates) {
+    try { await peerConnection.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { console.error(e); }
+  }
+  pendingRemoteCandidates = [];
+}
+
+// ---------- KONTROL MIC & KAMERA ----------
+function updateMicButton() { micIcon.textContent = isMicOn ? '🎤' : '🔇'; toggleMicBtn.classList.toggle('active-off', !isMicOn); }
+function updateCamButton() { camIcon.textContent = isCamOn ? '📷' : '🚫'; toggleCamBtn.classList.toggle('active-off', !isCamOn); }
+
+toggleMicBtn.addEventListener('click', () => {
+  const track = localStream && localStream.getAudioTracks()[0];
+  if (!track) { showNotification('Mikrofon tidak tersedia pada perangkat/browser Anda.'); return; }
+  isMicOn = !isMicOn; track.enabled = isMicOn; updateMicButton();
+});
+toggleCamBtn.addEventListener('click', () => {
+  const track = localStream && localStream.getVideoTracks()[0];
+  if (!track || isScreenSharing) { showNotification(isScreenSharing ? 'Tidak dapat mengubah kamera saat berbagi layar.' : 'Kamera tidak tersedia pada perangkat/browser Anda.'); return; }
+  isCamOn = !isCamOn; track.enabled = isCamOn; updateCamButton();
+});
+
+// ---------- SCREEN SHARING ----------
+shareScreenBtn.addEventListener('click', () => { isScreenSharing ? stopScreenShare() : startScreenShare(); });
+
+async function startScreenShare() {
+  if (!peerConnection) { showNotification('Tidak ada peserta lain untuk berbagi layar saat ini.'); return; }
+  if (!navigator.mediaDevices.getDisplayMedia) { showNotification('Browser Anda tidak mendukung fitur screen sharing.'); return; }
+
+  try {
+    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+  } catch (err) { return; }
+
+  const screenVideoTrack = screenStream.getVideoTracks()[0];
+  const screenAudioTrack = screenStream.getAudioTracks()[0];
+
+  const videoSender = getVideoSender();
+  if (videoSender) await videoSender.replaceTrack(screenVideoTrack);
+  localVideo.srcObject = screenStream;
+
+  if (screenAudioTrack) {
+    try {
+      const mixedTrack = mixAudioTracks(localStream.getAudioTracks()[0], screenAudioTrack);
+      const audioSender = getAudioSender();
+      if (audioSender && mixedTrack) await audioSender.replaceTrack(mixedTrack);
+    } catch (err) {
+      showNotification('Berbagi layar aktif, namun audio layar gagal digabungkan.');
+    }
+  } else {
+    showNotification('Audio screen sharing tidak didukung/diizinkan oleh browser atau sumber yang dipilih. Hanya video layar yang dibagikan.');
+  }
+
+  isScreenSharing = true;
+  shareScreenBtn.classList.add('sharing');
+  broadcastScreenShareStatus(true);
+
+  screenVideoTrack.onended = () => stopScreenShare();
+}
+
+function mixAudioTracks(micTrack, screenTrack) {
+  audioContextForMix = new (window.AudioContext || window.webkitAudioContext)();
+  const destination = audioContextForMix.createMediaStreamDestination();
+  if (micTrack) audioContextForMix.createMediaStreamSource(new MediaStream([micTrack])).connect(destination);
+  if (screenTrack) audioContextForMix.createMediaStreamSource(new MediaStream([screenTrack])).connect(destination);
+  return destination.stream.getAudioTracks()[0];
+}
+
+async function stopScreenShare() {
+  if (!isScreenSharing) return;
+  if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); screenStream = null; }
+
+  const videoSender = getVideoSender();
+  if (videoSender && originalCameraTrack) await videoSender.replaceTrack(originalCameraTrack);
+  localVideo.srcObject = localStream;
+
+  const audioSender = getAudioSender();
+  const micTrack = localStream.getAudioTracks()[0];
+  if (audioSender && micTrack) await audioSender.replaceTrack(micTrack);
+
+  if (audioContextForMix) { audioContextForMix.close(); audioContextForMix = null; }
+
+  isScreenSharing = false;
+  shareScreenBtn.classList.remove('sharing');
+  broadcastScreenShareStatus(false);
+}
+
+// ---------- CHAT ----------
+chatForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const message = chatInput.value.trim();
+  if (!message) return;
+  sendChatMessage(message);
+  chatInput.value = '';
+});
+toggleChatBtn.addEventListener('click', () => chatPanel.classList.toggle('hidden'));
+
+// ---------- KELUAR MEETING ----------
+leaveBtn.addEventListener('click', leaveMeeting);
+
+async function leaveMeeting() {
+  leftFlag = true;
+  if (pollTimer) clearInterval(pollTimer);
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  await clearPresence();
+  if (peerConnection) { peerConnection.close(); peerConnection = null; }
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+  window.location.reload();
+}
+
+window.addEventListener('beforeunload', () => {
+  clearPresence();
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  if (screenStream) screenStream.getTracks().forEach(t => t.stop());
+});
+</script>
+</body>
+</html>
